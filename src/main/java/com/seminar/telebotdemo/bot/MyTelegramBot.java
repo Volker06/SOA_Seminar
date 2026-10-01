@@ -26,15 +26,21 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     public String getBotToken() {
         return botToken;
     }
-
-    @Override
+@Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String text = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
 
-            String reply = generateResponse(text);
-            sendReply(chatId, reply);
+            // SỬA Ở ĐÂY: Phân loại tin nhắn
+            if (text.startsWith("/")) {
+                // Nếu là lệnh (bắt đầu bằng "/") -> Gọi hàm của Tân
+                handleCommand(chatId, text);
+            } else {
+                // Nếu là tin nhắn chữ bình thường -> Gọi hàm của Việt
+                String reply = generateResponse(text);
+                sendReply(chatId, reply);
+            }
         }
     }
 
@@ -44,6 +50,27 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             return "Chào bạn! Mình là bot demo cho seminar 😄";
         }
         return "Bạn vừa gửi: " + input;
+    }
+    private void handleCommand(long chatId, String command) {
+        String response;
+        // Cắt chuỗi để lấy phần lệnh chính, đề phòng user nhập "/start 123"
+        String baseCommand = command.split(" ")[0].toLowerCase();
+
+        switch (baseCommand) {
+            case "/start":
+                response = "Xin chào! Mình là bot SOA. Gõ /help để xem danh sách lệnh.";
+                break;
+            case "/help":
+                response = "Danh sách lệnh hỗ trợ:\n/start - Khởi động bot\n/status - Kiểm tra trạng thái hệ thống";
+                break;
+            case "/status":
+                response = "Hệ thống Backend (Spring Boot) đang hoạt động bình thường \uD83D\uDFE2";
+                break;
+            default:
+                response = "Lệnh không hợp lệ. Vui lòng gõ /help.";
+                break;
+        }
+        sendReply(chatId, response);
     }
 
     private void sendReply(long chatId, String text) {
@@ -56,4 +83,5 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             e.printStackTrace();
         }
     }
+
 }
