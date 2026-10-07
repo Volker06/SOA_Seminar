@@ -26,7 +26,8 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     public String getBotToken() {
         return botToken;
     }
-@Override
+
+    @Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String text = update.getMessage().getText();
@@ -51,6 +52,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         }
         return "Bạn vừa gửi: " + input;
     }
+
     private void handleCommand(long chatId, String command) {
         String response;
         // Cắt chuỗi để lấy phần lệnh chính, đề phòng user nhập "/start 123"
