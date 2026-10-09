@@ -89,7 +89,7 @@ class TelegramNotifier:
         """Kiểm tra token hợp lệ, trả về thông tin bot."""
         return self._call("getMe")
 
-    def send_message(self, text, parse_mode="HTML", silent=False):
+    def send_message(self, text, parse_mode="HTML", silent=False, reply_markup=None):
         if len(text) > MAX_LEN:
             text = text[: MAX_LEN - 20] + "\n… (đã cắt bớt)"
         payload = {
@@ -99,6 +99,8 @@ class TelegramNotifier:
             "disable_notification": silent,  # True = không phát âm thanh
             "disable_web_page_preview": True,
         }
+        if reply_markup:  # inline keyboard (nút bấm) đính kèm tin nhắn
+            payload["reply_markup"] = reply_markup
         return self._call("sendMessage", payload)
 
     def send_document(self, path, caption=""):
@@ -120,6 +122,29 @@ class TelegramNotifier:
         # INFO/SUCCESS gửi im lặng, còn lại có âm thanh
         silent = level in ("INFO", "SUCCESS")
         return self.send_message("\n".join(lines), silent=silent)
+
+    def send_survey(self, order_id, service_name="dịch vụ"):
+        """Chủ động đẩy phiếu khảo sát sau bán (5 nút sao) tới khách hàng.
+
+        callback_data có dạng  SURVEY:RATE:<order_id>:<số sao>
+        -> bot Java nhận callback_query này và điều khiển phần hội thoại tiếp theo.
+        """
+        order_id = str(order_id)
+        if ":" in order_id or len(order_id.encode()) > 30:
+            raise ValueError("order_id không được chứa ':' và tối đa 30 byte (giới hạn callback_data 64 byte)")
+        esc = html.escape
+        text = (
+            "⭐ <b>Khảo sát sau dịch vụ</b>\n\n"
+            f"Cảm ơn bạn đã sử dụng <b>{esc(service_name)}</b> (mã đơn <code>{esc(order_id)}</code>).\n"
+            "Bạn hài lòng với dịch vụ ở mức nào? Hãy chọn số sao bên dưới 👇"
+        )
+        keyboard = {
+            "inline_keyboard": [[
+                {"text": f"{n}⭐", "callback_data": f"SURVEY:RATE:{order_id}:{n}"}
+                for n in range(1, 6)
+            ]]
+        }
+        return self.send_message(text, reply_markup=keyboard)
 
 
 if __name__ == "__main__":
