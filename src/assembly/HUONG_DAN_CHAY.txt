@@ -30,7 +30,7 @@ BƯỚC 3: CHẠY NOTIFICATION SERVICE (cửa sổ terminal 2)
 -----------------------------------------------------
   cd notification-service
   pip install -r requirements.txt
-  uvicorn notification_service:app --port 8000
+  py -m uvicorn notification_service:app --port 8000
 
 BƯỚC 4: GỬI PHIẾU KHẢO SÁT (cửa sổ terminal 3)
 ----------------------------------------------
