@@ -1,10 +1,3 @@
-"""
-get_chat_id.py - Lấy chat_id của bạn.
-
-Cách dùng:
-  1. Mở Telegram, tìm bot của bạn, nhấn Start và gửi 1 tin nhắn bất kỳ.
-  2. Chạy:  python get_chat_id.py
-"""
 import os
 
 import requests

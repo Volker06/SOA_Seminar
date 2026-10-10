@@ -1,14 +1,3 @@
-"""
-trigger_survey.py - Giả lập "khách vừa dùng xong dịch vụ" -> chủ động gửi phiếu khảo sát qua Telegram.
-
-Bot KHÔNG chờ người dùng gõ /start: lệnh này chạy ở Python, Telegram bot tự nhắn tới khách.
-(Điều kiện duy nhất của Telegram: khách đã từng bấm Start với bot 1 lần để có chat_id.)
-
-Cách dùng:
-  python trigger_survey.py                                  # đơn demo, gửi ngay
-  python trigger_survey.py --order ORD-1001 --service "Giặt ủi"
-  python trigger_survey.py --delay 5                        # đợi 5s như thể dịch vụ vừa kết thúc
-"""
 import argparse
 import logging
 import time

@@ -20,10 +20,6 @@ import com.seminar.telebotdemo.handler.ChatResponder;
 import com.seminar.telebotdemo.handler.CommandHandler;
 import com.seminar.telebotdemo.handler.SurveyHandler;
 
-/**
- * Chỉ làm 2 việc: nhận update từ Telegram -> chuyển cho handler phù hợp -> gửi kết quả.
- * Logic nghiệp vụ nằm ở package handler.
- */
 @Component
 @SuppressWarnings("deprecation")
 public class MyTelegramBot extends TelegramLongPollingBot {
@@ -58,7 +54,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        // Khách bấm nút sao / nút "Không, cảm ơn" trên phiếu khảo sát
         if (update.hasCallbackQuery()) {
             onCallback(update.getCallbackQuery());
             return;
@@ -71,11 +66,11 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
         String reply;
         if (text.startsWith("/")) {
-            reply = commandHandler.handle(chatId, text);          // Command Handling
+            reply = commandHandler.handle(chatId, text);
         } else if (surveyHandler.hasPending(chatId)) {
-            reply = surveyHandler.handleText(chatId, text);       // đang giữa khảo sát: text = lý do / góp ý
+            reply = surveyHandler.handleText(chatId, text);
         } else {
-            reply = chatResponder.respond(text);                  // Chatbot Basics
+            reply = chatResponder.respond(text);
         }
         sendReply(chatId, reply);
     }
@@ -90,16 +85,15 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         int messageId = cb.getMessage().getMessageId();
 
         SurveyHandler.CallbackResult result = surveyHandler.handleCallback(chatId, data);
-        answerCallback(cb.getId(), result.toast());            // tắt vòng xoay loading trên nút
+        answerCallback(cb.getId(), result.toast());
         if (result.editedText() != null) {
-            editMessage(chatId, messageId, result.editedText()); // sửa phiếu cũ + gỡ nút để không bấm lại
+            editMessage(chatId, messageId, result.editedText());
         }
         if (result.next() != null) {
             sendReply(chatId, result.next());
         }
     }
 
-    // ------------------------------------------------------------------ gửi tin
     private void sendReply(long chatId, String text) {
         SendMessage message = new SendMessage(String.valueOf(chatId), text);
         try {

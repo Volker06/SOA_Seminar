@@ -2,7 +2,6 @@ package com.seminar.telebotdemo.handler;
 
 import org.springframework.stereotype.Component;
 
-/** Chức năng 2 - Chatbot Basics: trả lời tin nhắn văn bản thường. */
 @Component
 public class ChatResponder {
 

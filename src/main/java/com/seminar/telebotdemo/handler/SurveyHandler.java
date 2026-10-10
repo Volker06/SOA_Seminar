@@ -9,29 +9,17 @@ import org.springframework.stereotype.Component;
 import com.seminar.telebotdemo.survey.NotificationClient;
 import com.seminar.telebotdemo.survey.SurveyResultStore;
 
-/**
- * Flow Post-sale Survey (máy trạng thái theo từng chat).
- *
- *   [Python gửi phiếu 5 sao] --bấm sao--> RATE
- *        stars <= 2 -> AWAITING_REASON   (hỏi lý do không hài lòng, khách nhắn text)
- *        stars >= 3 -> AWAITING_FEEDBACK (hỏi có muốn góp ý không, khách nhắn text hoặc bấm "Không")
- *   -> lưu kết quả; nếu không hài lòng thì cảnh báo CSKH qua Notification Service.
- *
- * callback_data: SURVEY:RATE:<orderId>:<stars>  |  SURVEY:NOFB:<orderId>
- */
 @Component
 public class SurveyHandler {
 
     public static final String PREFIX = "SURVEY:";
 
-    /** Một tin nhắn bot gửi đi, có thể kèm 1 nút inline. */
     public record Reply(String text, String buttonLabel, String buttonData) {
         public static Reply of(String text) {
             return new Reply(text, null, null);
         }
     }
 
-    /** Kết quả xử lý 1 lần bấm nút: toast, nội dung sửa lại tin cũ (bỏ nút), tin nhắn tiếp theo. */
     public record CallbackResult(String toast, String editedText, Reply next) {
     }
 
@@ -51,7 +39,6 @@ public class SurveyHandler {
         this.notificationClient = notificationClient;
     }
 
-    // ---------------------------------------------------------------- nút bấm
     public CallbackResult handleCallback(long chatId, String data) {
         String[] p = data.split(":");
         if (p.length == 4 && "RATE".equals(p[1])) {
@@ -67,7 +54,6 @@ public class SurveyHandler {
         if (stars < 1 || stars > 5) {
             return new CallbackResult("Số sao không hợp lệ", null, null);
         }
-        // Chống bấm lặp / bấm lại phiếu cũ
         if (!rated.add(chatId + ":" + orderId)) {
             return new CallbackResult("Bạn đã đánh giá đơn này rồi", null, null);
         }
@@ -99,13 +85,10 @@ public class SurveyHandler {
         return new CallbackResult("Đã ghi nhận", "Bạn không có góp ý thêm.", Reply.of(finish(chatId, s, null)));
     }
 
-    // ------------------------------------------------------------ tin nhắn text
-    /** Khách đang giữa khảo sát? Nếu có thì tin nhắn thường sẽ được coi là câu trả lời. */
     public boolean hasPending(long chatId) {
         return sessions.containsKey(chatId);
     }
 
-    /** Tin nhắn text = lý do (nếu không hài lòng) hoặc góp ý (nếu hài lòng). */
     public String handleText(long chatId, String text) {
         Session s = sessions.remove(chatId);
         if (s == null) {
@@ -114,7 +97,6 @@ public class SurveyHandler {
         return finish(chatId, s, text.trim());
     }
 
-    /** Lệnh /skip: bỏ qua bước lý do / góp ý nhưng vẫn giữ số sao đã chấm. */
     public String skip(long chatId) {
         Session s = sessions.remove(chatId);
         if (s == null) {
@@ -123,7 +105,6 @@ public class SurveyHandler {
         return finish(chatId, s, null);
     }
 
-    // ------------------------------------------------------------------- kết thúc
     private String finish(long chatId, Session s, String comment) {
         store.save(chatId, s.orderId(), s.stars(), comment);
 

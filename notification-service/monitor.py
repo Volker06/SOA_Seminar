@@ -1,14 +1,3 @@
-"""
-monitor.py - Giám sát tài nguyên máy chủ và gửi cảnh báo qua Telegram.
-
-Cơ chế chống spam:
-  - Chỉ báo khi vượt ngưỡng lần đầu, hoặc sau thời gian COOLDOWN nếu vẫn còn vượt.
-  - Khi giá trị trở lại bình thường -> gửi thông báo "RECOVERED".
-
-Demo nhanh: đặt ngưỡng thấp để dễ kích hoạt
-  Linux/Mac : CPU_THRESHOLD=1 python monitor.py
-  Windows   : set CPU_THRESHOLD=1 && python monitor.py
-"""
 import logging
 import os
 import time
@@ -26,8 +15,8 @@ THRESHOLDS = {
     "RAM": float(os.getenv("RAM_THRESHOLD", 85)),
     "DISK": float(os.getenv("DISK_THRESHOLD", 90)),
 }
-CRITICAL_LEVEL = 95.0                                  # >= mức này -> CRITICAL
-INTERVAL = int(os.getenv("CHECK_INTERVAL", 30))        # giây giữa các lần kiểm tra
+CRITICAL_LEVEL = 95.0
+INTERVAL = int(os.getenv("CHECK_INTERVAL", 30))
 COOLDOWN = timedelta(seconds=int(os.getenv("ALERT_COOLDOWN", 600)))
 
 
@@ -41,7 +30,7 @@ def collect():
 
 def main():
     notifier = TelegramNotifier()
-    active = {}  # metric -> thời điểm gửi cảnh báo gần nhất (đang trong trạng thái báo động)
+    active = {}
 
     notifier.notify(
         "INFO", "Monitor đã khởi động",

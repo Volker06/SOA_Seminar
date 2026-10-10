@@ -1,0 +1,47 @@
+HƯỚNG DẪN CHẠY - SOA Seminar (Telegram Bot + Notification Service)
+====================================================================
+
+Gói này gồm:
+  telebotdemo-0.0.1-SNAPSHOT.jar   Bot Telegram (Java, Spring Boot) - đã build sẵn
+  notification-service/            Notification Service (Python)
+  .env.example                     Mẫu cấu hình (KHÔNG chứa token thật)
+  README.md                        Mô tả dự án
+
+YÊU CẦU
+-------
+  - Java JDK/JRE 17 trở lên   (kiểm tra: java -version)
+  - Python 3.9 trở lên        (kiểm tra: python --version)
+  - Mỗi người tự tạo 1 bot riêng bằng @BotFather trên Telegram.
+    Không dùng chung token với người khác (Telegram sẽ báo lỗi 409).
+
+BƯỚC 1: TẠO FILE .env
+---------------------
+  Copy .env.example thành .env (cùng thư mục với file .jar) rồi điền:
+    BOT_TOKEN, BOT_USERNAME, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, SERVICE_API_KEY
+  TELEGRAM_CHAT_ID: mở bot trên Telegram, bấm Start 1 lần, rồi nhắn
+  @userinfobot để biết chat_id của bạn.
+
+BƯỚC 2: CHẠY BOT JAVA (cửa sổ terminal 1)
+-----------------------------------------
+  java -jar telebotdemo-0.0.1-SNAPSHOT.jar
+  (file .env phải nằm cùng thư mục bạn đang đứng khi chạy lệnh này)
+
+BƯỚC 3: CHẠY NOTIFICATION SERVICE (cửa sổ terminal 2)
+-----------------------------------------------------
+  cd notification-service
+  pip install -r requirements.txt
+  uvicorn notification_service:app --port 8000
+
+BƯỚC 4: GỬI PHIẾU KHẢO SÁT (cửa sổ terminal 3)
+----------------------------------------------
+  cd notification-service
+  python trigger_survey.py --order ORD-1001 --service "Giặt ủi"
+
+  Mở Telegram: bot tự gửi phiếu 5 sao. Chấm <= 2 sao: bot hỏi lý do và cảnh báo CSKH.
+  Chấm >= 3 sao: bot hỏi góp ý. Kết quả lưu ở data/survey_results.csv.
+  Gõ /skip để bỏ qua câu hỏi lý do/góp ý.
+
+LƯU Ý
+-----
+  - Không chia sẻ file .env (chứa token bot). Nếu lỡ lộ, vào @BotFather dùng /revoke.
+  - Telegram chỉ cho bot nhắn trước với người đã bấm Start ít nhất 1 lần.

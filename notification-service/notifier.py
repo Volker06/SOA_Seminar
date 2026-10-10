@@ -1,12 +1,3 @@
-"""
-notifier.py - Thư viện gửi System Notification qua Telegram Bot API.
-
-Chức năng:
-  - send_message : gửi tin nhắn (HTML), hỗ trợ im lặng (không rung/chuông)
-  - notify       : gửi thông báo có cấu trúc (level, title, message, service, host, time)
-  - send_document: gửi file (log, báo cáo...)
-  - Retry tự động, xử lý rate limit (HTTP 429), cắt tin nhắn quá dài (giới hạn 4096 ký tự)
-"""
 import html
 import logging
 import os
@@ -21,7 +12,7 @@ load_dotenv()
 log = logging.getLogger("notifier")
 
 API_URL = "https://api.telegram.org/bot{token}/{method}"
-MAX_LEN = 4096  # giới hạn ký tự của 1 tin nhắn Telegram
+MAX_LEN = 4096
 
 LEVEL_ICON = {
     "INFO": "ℹ️",
@@ -33,8 +24,7 @@ LEVEL_ICON = {
 
 
 class TelegramError(Exception):
-    """Lỗi trả về từ Telegram API hoặc lỗi mạng sau khi đã retry."""
-
+    pass
 
 class TelegramNotifier:
     def __init__(self, token=None, chat_id=None, timeout=10, max_retries=3):
@@ -46,9 +36,7 @@ class TelegramNotifier:
         self.max_retries = max_retries
         self.host = socket.gethostname()
 
-    # ------------------------------------------------------------------ core
     def _call(self, method, payload=None, file_field=None, file_path=None):
-        """Gọi 1 method của Bot API, có retry + xử lý 429."""
         url = API_URL.format(token=self.token, method=method)
         last_err = None
 
@@ -72,21 +60,17 @@ class TelegramNotifier:
             if data.get("ok"):
                 return data["result"]
 
-            # Rate limit: Telegram cho biết phải đợi bao lâu
             if resp.status_code == 429:
                 wait = data.get("parameters", {}).get("retry_after", 1) + 1
                 log.warning("Bị rate limit, đợi %ss", wait)
                 time.sleep(wait)
                 continue
 
-            # Lỗi khác (token sai, chat_id sai, bot bị chặn...) -> không retry
             raise TelegramError(f"{data.get('error_code')}: {data.get('description')}")
 
         raise TelegramError(f"Thất bại sau {self.max_retries} lần thử: {last_err}")
 
-    # ------------------------------------------------------------- public API
     def get_me(self):
-        """Kiểm tra token hợp lệ, trả về thông tin bot."""
         return self._call("getMe")
 
     def send_message(self, text, parse_mode="HTML", silent=False, reply_markup=None):
@@ -96,10 +80,10 @@ class TelegramNotifier:
             "chat_id": self.chat_id,
             "text": text,
             "parse_mode": parse_mode,
-            "disable_notification": silent,  # True = không phát âm thanh
+            "disable_notification": silent,
             "disable_web_page_preview": True,
         }
-        if reply_markup:  # inline keyboard (nút bấm) đính kèm tin nhắn
+        if reply_markup:
             payload["reply_markup"] = reply_markup
         return self._call("sendMessage", payload)
 
@@ -108,10 +92,9 @@ class TelegramNotifier:
         return self._call("sendDocument", payload, file_field="document", file_path=path)
 
     def notify(self, level, title, message, service=None):
-        """Gửi thông báo hệ thống có định dạng chuẩn."""
         level = level.upper()
         icon = LEVEL_ICON.get(level, "🔔")
-        esc = html.escape  # tránh lỗi khi nội dung chứa <, >, &
+        esc = html.escape
         lines = [f"{icon} <b>[{level}] {esc(title)}</b>", ""]
         if service:
             lines.append(f"<b>Service:</b> {esc(service)}")
@@ -119,16 +102,10 @@ class TelegramNotifier:
         lines.append(f"<b>Time:</b> {datetime.now():%Y-%m-%d %H:%M:%S}")
         lines.append("")
         lines.append(f"<pre>{esc(message)}</pre>")
-        # INFO/SUCCESS gửi im lặng, còn lại có âm thanh
         silent = level in ("INFO", "SUCCESS")
         return self.send_message("\n".join(lines), silent=silent)
 
     def send_survey(self, order_id, service_name="dịch vụ"):
-        """Chủ động đẩy phiếu khảo sát sau bán (5 nút sao) tới khách hàng.
-
-        callback_data có dạng  SURVEY:RATE:<order_id>:<số sao>
-        -> bot Java nhận callback_query này và điều khiển phần hội thoại tiếp theo.
-        """
         order_id = str(order_id)
         if ":" in order_id or len(order_id.encode()) > 30:
             raise ValueError("order_id không được chứa ':' và tối đa 30 byte (giới hạn callback_data 64 byte)")

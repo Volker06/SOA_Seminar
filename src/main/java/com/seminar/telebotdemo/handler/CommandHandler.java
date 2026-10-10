@@ -2,7 +2,6 @@ package com.seminar.telebotdemo.handler;
 
 import org.springframework.stereotype.Component;
 
-/** Chức năng 1 - Command Handling: xử lý các lệnh bắt đầu bằng "/". */
 @Component
 public class CommandHandler {
 
@@ -13,7 +12,6 @@ public class CommandHandler {
     }
 
     public String handle(long chatId, String command) {
-        // Lấy phần lệnh chính, đề phòng user nhập "/start 123"
         String base = command.split(" ")[0].toLowerCase();
 
         return switch (base) {

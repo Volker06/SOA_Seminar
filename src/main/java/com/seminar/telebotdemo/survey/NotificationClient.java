@@ -11,10 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-/**
- * Gọi REST sang Notification Service (Python): POST /notify.
- * Dùng để cảnh báo đội CSKH khi có khách đánh giá thấp. Gửi bất đồng bộ, lỗi chỉ log, không làm hỏng flow khảo sát.
- */
 @Component
 public class NotificationClient {
 

@@ -1,12 +1,3 @@
-"""
-notification_service.py - Notification Service (REST) theo tư duy SOA.
-
-Các service khác (Order, Payment, Auth, CI/CD...) không cần biết Telegram.
-Chúng chỉ gọi REST:  POST /notify  -> service này lo việc gửi qua Telegram.
-
-Chạy :  uvicorn notification_service:app --reload --port 8000
-Docs :  http://localhost:8000/docs   (Swagger UI tự sinh)
-"""
 import logging
 import os
 from typing import Literal
@@ -54,7 +45,6 @@ def _send(n: Notification):
 
 @app.post("/notify", status_code=202)
 def notify(n: Notification, background: BackgroundTasks, x_api_key: str = Header(None)):
-    """Nhận thông báo, xếp hàng gửi nền và trả 202 Accepted ngay (không chặn service gọi)."""
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="Invalid API key")
     background.add_task(_send, n)
@@ -63,7 +53,6 @@ def notify(n: Notification, background: BackgroundTasks, x_api_key: str = Header
 
 @app.post("/survey", status_code=202)
 def survey(r: SurveyRequest, background: BackgroundTasks, x_api_key: str = Header(None)):
-    """Order Service gọi khi đơn hoàn tất -> chủ động đẩy phiếu khảo sát tới khách."""
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="Invalid API key")
     background.add_task(_send_survey, r)
@@ -72,7 +61,6 @@ def survey(r: SurveyRequest, background: BackgroundTasks, x_api_key: str = Heade
 
 @app.get("/health")
 def health():
-    """Health check: kiểm tra service và token bot còn hợp lệ."""
     try:
         return {"status": "ok", "bot": notifier.get_me()["username"]}
     except TelegramError as e:
