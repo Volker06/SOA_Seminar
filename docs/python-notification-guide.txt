@@ -200,20 +200,3 @@ PHẦN E. LƯU Ý BẢO MẬT
 4. Đổi SERVICE_API_KEY thành giá trị khó đoán khi dùng thật.
 
 
-=====================================================================
-PHẦN F. KỊCH BẢN DEMO (gợi ý)
-=====================================================================
-Chuẩn bị: mở Telegram Web/Desktop cạnh terminal; có sẵn hotspot 4G/VPN
-dự phòng; quay sẵn video demo phòng khi mạng lớp học lỗi.
-
-1. python notifier.py            -> bot gửi tin đầu tiên
-2. Test 2 (5 mức độ)             -> giới thiệu phân mức độ nghiêm trọng
-3. CPU_THRESHOLD=1 python monitor.py -> cảnh báo hệ thống tự động
-4. uvicorn + Swagger POST /notify -> mô phỏng service khác gọi
-   Notification Service (nhấn mạnh tư duy SOA: loose coupling, REST,
-   service contract)
-5. Demo sai API key (401)         -> chứng minh kiểm soát truy cập
-
-=====================================================================
-HẾT
-=====================================================================
