@@ -5,8 +5,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Component;
-
-import com.seminar.telebotdemo.survey.NotificationClient;
 import com.seminar.telebotdemo.survey.SurveyResultStore;
 
 @Component
@@ -23,7 +21,9 @@ public class SurveyHandler {
     public record CallbackResult(String toast, String editedText, Reply next) {
     }
 
-    private enum Step { AWAITING_REASON, AWAITING_FEEDBACK }
+    private enum Step {
+        AWAITING_REASON, AWAITING_FEEDBACK
+    }
 
     private record Session(String orderId, int stars, Step step) {
     }
@@ -32,11 +32,9 @@ public class SurveyHandler {
     private final Set<String> rated = ConcurrentHashMap.newKeySet();
 
     private final SurveyResultStore store;
-    private final NotificationClient notificationClient;
 
-    public SurveyHandler(SurveyResultStore store, NotificationClient notificationClient) {
+    public SurveyHandler(SurveyResultStore store) {
         this.store = store;
-        this.notificationClient = notificationClient;
     }
 
     public CallbackResult handleCallback(long chatId, String data) {
@@ -63,14 +61,14 @@ public class SurveyHandler {
         if (stars <= 2) {
             sessions.put(chatId, new Session(orderId, stars, Step.AWAITING_REASON));
             return new CallbackResult("Đã ghi nhận " + stars + "⭐", edited, Reply.of(
-                    "😔 Rất tiếc vì trải nghiệm của bạn chưa tốt.\n"
+                    "Rất tiếc vì trải nghiệm của bạn chưa tốt.\n"
                             + "Bạn có thể cho mình biết vì sao bạn chưa hài lòng không? "
                             + "Hãy nhắn lý do bên dưới (hoặc gõ /skip để bỏ qua)."));
         }
 
         sessions.put(chatId, new Session(orderId, stars, Step.AWAITING_FEEDBACK));
         return new CallbackResult("Đã ghi nhận " + stars + "⭐", edited, new Reply(
-                "🎉 Cảm ơn bạn đã hài lòng với dịch vụ!\n"
+                "Cảm ơn bạn đã hài lòng với dịch vụ!\n"
                         + "Bạn có muốn góp ý gì thêm để chúng mình phục vụ tốt hơn không? "
                         + "Hãy nhắn góp ý bên dưới, hoặc bấm nút nếu không có.",
                 "Không, cảm ơn", PREFIX + "NOFB:" + orderId));
@@ -109,11 +107,7 @@ public class SurveyHandler {
         store.save(chatId, s.orderId(), s.stars(), comment);
 
         if (s.stars() <= 2) {
-            notificationClient.send("survey-bot", "WARNING",
-                    "Khách hàng không hài lòng (" + s.stars() + "⭐)",
-                    "Đơn: " + s.orderId() + "\nChat ID: " + chatId + "\nLý do: "
-                            + (comment == null ? "(khách không nêu)" : comment));
-            return "🙏 Cảm ơn bạn đã chia sẻ. Chúng mình đã ghi nhận và bộ phận CSKH sẽ liên hệ để hỗ trợ bạn sớm nhất.";
+            return "Cảm ơn bạn đã chia sẻ. Chúng mình đã ghi nhận phản hồi của bạn và sẽ cải thiện dịch vụ.";
         }
         return "💙 Cảm ơn bạn đã dành thời gian đánh giá! Hẹn gặp lại bạn ở lần sử dụng tiếp theo.";
     }
