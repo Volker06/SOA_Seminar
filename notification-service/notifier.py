@@ -30,8 +30,8 @@ class TelegramNotifier:
     def __init__(self, token=None, chat_id=None, timeout=10, max_retries=3):
         self.token = token or os.getenv("TELEGRAM_BOT_TOKEN")
         self.chat_id = chat_id or os.getenv("TELEGRAM_CHAT_ID")
-        if not self.token or not self.chat_id:
-            raise ValueError("Thiếu TELEGRAM_BOT_TOKEN hoặc TELEGRAM_CHAT_ID (xem file .env)")
+        if not self.token:
+            raise ValueError("Thiếu TELEGRAM_BOT_TOKEN (xem file .env)")
         self.timeout = timeout
         self.max_retries = max_retries
         self.host = socket.gethostname()
@@ -73,11 +73,14 @@ class TelegramNotifier:
     def get_me(self):
         return self._call("getMe")
 
-    def send_message(self, text, parse_mode="HTML", silent=False, reply_markup=None):
+    def send_message(self, text, parse_mode="HTML", silent=False, reply_markup=None, chat_id=None):
+        target = chat_id or self.chat_id
+        if not target:
+            raise ValueError("Không có chat_id để gửi")
         if len(text) > MAX_LEN:
             text = text[: MAX_LEN - 20] + "\n… (đã cắt bớt)"
         payload = {
-            "chat_id": self.chat_id,
+            "chat_id": target,
             "text": text,
             "parse_mode": parse_mode,
             "disable_notification": silent,
@@ -105,7 +108,7 @@ class TelegramNotifier:
         silent = level in ("INFO", "SUCCESS")
         return self.send_message("\n".join(lines), silent=silent)
 
-    def send_survey(self, order_id, service_name="dịch vụ"):
+    def send_survey(self, order_id, service_name="dịch vụ", chat_id=None):
         order_id = str(order_id)
         if ":" in order_id or len(order_id.encode()) > 30:
             raise ValueError("order_id không được chứa ':' và tối đa 30 byte (giới hạn callback_data 64 byte)")
@@ -121,7 +124,7 @@ class TelegramNotifier:
                 for n in range(1, 6)
             ]]
         }
-        return self.send_message(text, reply_markup=keyboard)
+        return self.send_message(text, reply_markup=keyboard, chat_id=chat_id)
 
 
 if __name__ == "__main__":

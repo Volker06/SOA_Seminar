@@ -19,6 +19,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import com.seminar.telebotdemo.handler.ChatResponder;
 import com.seminar.telebotdemo.handler.CommandHandler;
 import com.seminar.telebotdemo.handler.SurveyHandler;
+import com.seminar.telebotdemo.survey.CustomerStore;
 
 @Component
 @SuppressWarnings("deprecation")
@@ -29,6 +30,15 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     private final CommandHandler commandHandler;
     private final ChatResponder chatResponder;
     private final SurveyHandler surveyHandler;
+    private final CustomerStore customerStore;
+
+    public MyTelegramBot(CommandHandler commandHandler, ChatResponder chatResponder,
+                         SurveyHandler surveyHandler, CustomerStore customerStore) {
+        this.commandHandler = commandHandler;
+        this.chatResponder = chatResponder;
+        this.surveyHandler = surveyHandler;
+        this.customerStore = customerStore;
+    }
 
     @Value("${telegram.bot.username}")
     private String botUsername;
@@ -36,11 +46,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     @Value("${telegram.bot.token}")
     private String botToken;
 
-    public MyTelegramBot(CommandHandler commandHandler, ChatResponder chatResponder, SurveyHandler surveyHandler) {
-        this.commandHandler = commandHandler;
-        this.chatResponder = chatResponder;
-        this.surveyHandler = surveyHandler;
-    }
 
     @Override
     public String getBotUsername() {
@@ -62,18 +67,29 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             return;
         }
         String text = update.getMessage().getText();
-        long chatId = update.getMessage().getChatId();
+long chatId = update.getMessage().getChatId();
 
-        String reply;
-        if (text.startsWith("/")) {
-            reply = commandHandler.handle(chatId, text);
-        } else if (surveyHandler.hasPending(chatId)) {
-            reply = surveyHandler.handleText(chatId, text);
-        } else {
-            reply = chatResponder.respond(text);
-        }
-        sendReply(chatId, reply);
+// Lưu khách (nếu chưa có) mỗi khi có người nhắn tin
+String code = null;
+var from = update.getMessage().getFrom();
+if (from != null) {
+    String fullName = ((from.getFirstName() == null ? "" : from.getFirstName()) + " "
+            + (from.getLastName() == null ? "" : from.getLastName())).trim();
+    code = customerStore.register(chatId, fullName, from.getUserName());
+}
+
+    String reply;
+    if (text.startsWith("/")) {
+        reply = commandHandler.handle(chatId, text);
+    if (text.toLowerCase().startsWith("/start") && code != null) {
+        reply += "\nMã khách hàng của bạn: " + code;
     }
+    } else if (surveyHandler.hasPending(chatId)) {
+        reply = surveyHandler.handleText(chatId, text);
+    } else {
+        reply = chatResponder.respond(text);
+    }
+        sendReply(chatId, reply);}
 
     private void onCallback(CallbackQuery cb) {
         String data = cb.getData();
@@ -148,4 +164,5 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             log.error("Trả lời callback thất bại", e);
         }
     }
+
 }
