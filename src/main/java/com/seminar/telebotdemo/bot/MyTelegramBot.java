@@ -66,30 +66,31 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         if (!update.hasMessage() || !update.getMessage().hasText()) {
             return;
         }
+
         String text = update.getMessage().getText();
-long chatId = update.getMessage().getChatId();
+        long chatId = update.getMessage().getChatId();
 
-// Lưu khách (nếu chưa có) mỗi khi có người nhắn tin
-String code = null;
-var from = update.getMessage().getFrom();
-if (from != null) {
-    String fullName = ((from.getFirstName() == null ? "" : from.getFirstName()) + " "
-            + (from.getLastName() == null ? "" : from.getLastName())).trim();
-    code = customerStore.register(chatId, fullName, from.getUserName());
-}
+        String code = null;
+        var from = update.getMessage().getFrom();
+        if (from != null) {
+            String fullName = ((from.getFirstName() == null ? "" : from.getFirstName()) + " "
+                    + (from.getLastName() == null ? "" : from.getLastName())).trim();
+            code = customerStore.register(chatId, fullName, from.getUserName());
+        }
 
-    String reply;
-    if (text.startsWith("/")) {
-        reply = commandHandler.handle(chatId, text);
-    if (text.toLowerCase().startsWith("/start") && code != null) {
-        reply += "\nMã khách hàng của bạn: " + code;
+        String reply;
+        if (text.startsWith("/")) {
+            reply = commandHandler.handle(chatId, text);
+            if (text.toLowerCase().startsWith("/start") && code != null) {
+                reply += "\nMã khách hàng của bạn: " + code;
+            }
+        } else if (surveyHandler.hasPending(chatId)) {
+            reply = surveyHandler.handleText(chatId, text);
+        } else {
+            reply = chatResponder.respond(text);
+        }
+        sendReply(chatId, reply);
     }
-    } else if (surveyHandler.hasPending(chatId)) {
-        reply = surveyHandler.handleText(chatId, text);
-    } else {
-        reply = chatResponder.respond(text);
-    }
-        sendReply(chatId, reply);}
 
     private void onCallback(CallbackQuery cb) {
         String data = cb.getData();
@@ -100,7 +101,7 @@ if (from != null) {
         long chatId = cb.getMessage().getChatId();
         int messageId = cb.getMessage().getMessageId();
 
-        SurveyHandler.CallbackResult result = surveyHandler.handleCallback(chatId, data);
+        SurveyHandler.CallbackResult result = surveyHandler.handleCallback(chatId, messageId, data);
         answerCallback(cb.getId(), result.toast());
         if (result.editedText() != null) {
             editMessage(chatId, messageId, result.editedText());

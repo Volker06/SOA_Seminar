@@ -22,7 +22,6 @@ public class CustomerStore {
     private static final Path FILE = Path.of("data", "customers.csv");
     private static final String HEADER = "code,chat_id,name,username,registered_at\n";
 
-    /** Lưu khách nếu chưa có, trả về mã khách (đã có thì trả mã cũ). */
     public synchronized String register(long chatId, String name, String username) {
         try {
             Files.createDirectories(FILE.getParent());
@@ -35,11 +34,11 @@ public class CustomerStore {
                 String[] p = lines.get(i).split(",", -1);
                 if (p.length < 2) continue;
                 if (p[1].equals(String.valueOf(chatId))) {
-                    return p[0];                       // khách cũ
+                    return p[0];                       
                 }
                 codes.add(p[0]);
             }
-            int n = lines.size();                      // dòng header tính là 1 => KH001 cho khách đầu tiên
+            int n = lines.size();                      
             String code = String.format("KH%03d", n);
             while (codes.contains(code)) {
                 code = String.format("KH%03d", ++n);

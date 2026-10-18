@@ -7,10 +7,25 @@ from notifier import TelegramError, TelegramNotifier
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
+COUNTER_FILE = customers.FILE.parent / "order_counter.txt"
+MAX_ORDER = 99
+
+
+def next_order_id():
+    """Trả về ORD-01 ... ORD-99, sau đó quay lại ORD-01."""
+    try:
+        last = int(COUNTER_FILE.read_text().strip())
+    except (FileNotFoundError, ValueError):
+        last = 0
+    n = last + 1 if last < MAX_ORDER else 1
+    COUNTER_FILE.parent.mkdir(parents=True, exist_ok=True)
+    COUNTER_FILE.write_text(str(n))
+    return f"ORD-{n:02d}"
+
 
 def main():
     ap = argparse.ArgumentParser(description="Gửi phiếu khảo sát sau bán qua Telegram")
-    ap.add_argument("--order", default=f"ORD-{int(time.time()) % 100000}", help="Mã đơn hàng")
+    ap.add_argument("--order", default=None, help="Mã đơn hàng (bỏ trống = tự đánh số ORD-01..ORD-99)")
     ap.add_argument("--service", default="Dịch vụ demo", help="Tên dịch vụ khách vừa dùng")
     ap.add_argument("--delay", type=int, default=0, help="Số giây chờ trước khi gửi")
     ap.add_argument("--to", nargs="+", metavar="MÃ", help="Mã khách, ví dụ: KH001 KH002")
@@ -50,7 +65,8 @@ def main():
 
     ok = 0
     for code, chat_id in targets:
-        order_id = args.order if len(targets) == 1 else f"{args.order}-{code}"
+        base = args.order or next_order_id()
+        order_id = f"{base}-{code}"
         try:
             notifier.send_survey(order_id, args.service, chat_id=chat_id)
             print(f"✔ Đã gửi cho {code} (đơn {order_id})")

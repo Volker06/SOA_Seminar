@@ -6,7 +6,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Component;
 import com.seminar.telebotdemo.survey.SurveyResultStore;
-import com.seminar.telebotdemo.survey.NotificationClient;
 
 @Component
 public class SurveyHandler {
@@ -33,17 +32,15 @@ public class SurveyHandler {
     private final Set<String> rated = ConcurrentHashMap.newKeySet();
 
     private final SurveyResultStore store;
-    private final NotificationClient notificationClient;
 
-    public SurveyHandler(SurveyResultStore store, NotificationClient notificationClient) {
+    public SurveyHandler(SurveyResultStore store) {
         this.store = store;
-        this.notificationClient = notificationClient;
     }
 
-    public CallbackResult handleCallback(long chatId, String data) {
+    public CallbackResult handleCallback(long chatId, int messageId, String data) {
         String[] p = data.split(":");
         if (p.length == 4 && "RATE".equals(p[1])) {
-            return onRate(chatId, p[2], parseStars(p[3]));
+            return onRate(chatId, messageId, p[2], parseStars(p[3]));
         }
         if (p.length == 3 && "NOFB".equals(p[1])) {
             return onNoFeedback(chatId, p[2]);
@@ -51,11 +48,11 @@ public class SurveyHandler {
         return new CallbackResult("Nút không hợp lệ", null, null);
     }
 
-    private CallbackResult onRate(long chatId, String orderId, int stars) {
+    private CallbackResult onRate(long chatId, int messageId, String orderId, int stars) {
         if (stars < 1 || stars > 5) {
             return new CallbackResult("Số sao không hợp lệ", null, null);
         }
-        if (!rated.add(chatId + ":" + orderId)) {
+        if (!rated.add(chatId + ":" + messageId)) {
             return new CallbackResult("Bạn đã đánh giá đơn này rồi", null, null);
         }
 
@@ -107,14 +104,11 @@ public class SurveyHandler {
     }
 
     private String finish(long chatId, Session s, String comment) {
-    store.save(chatId, s.orderId(), s.stars(), comment);
+        store.save(chatId, s.orderId(), s.stars(), comment);
 
-    if (s.stars() <= 2) {
-        notificationClient.send("survey-service", "WARNING", "Khách chưa hài lòng",
-                "Chat " + chatId + " chấm " + s.stars() + "/5 cho đơn " + s.orderId()
-                        + (comment == null ? " (không nêu lý do)" : "\nLý do: " + comment));
-        return "Cảm ơn bạn đã chia sẻ. Chúng mình đã ghi nhận phản hồi của bạn và sẽ cải thiện dịch vụ.";
-    }
+        if (s.stars() <= 2) {
+            return "Cảm ơn bạn đã chia sẻ. Chúng mình đã ghi nhận phản hồi của bạn và sẽ cải thiện dịch vụ.";
+        }
         return "💙 Cảm ơn bạn đã dành thời gian đánh giá! Hẹn gặp lại bạn ở lần sử dụng tiếp theo.";
     }
 

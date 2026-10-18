@@ -6,9 +6,10 @@ Gói này gồm:
   notification-service/            Notification Service (Python)
   .env.example                     Mẫu cấu hình (KHÔNG chứa token thật)
   README.md                        Mô tả dự án
-  data/                            (tự tạo khi chạy) chứa danh sách khách và kết quả khảo sát
+  data/                            (tự tạo khi chạy) chứa dữ liệu của hệ thống
       customers.csv                  Danh sách khách đã nhắn bot + mã khách (KH001, KH002...)
       survey_results.csv             Kết quả khảo sát khách đã chấm
+      order_counter.txt              Bộ đếm mã đơn tự động (ORD-01 đến ORD-99)
 
 YÊU CẦU
 -------
@@ -62,19 +63,30 @@ BƯỚC 6: GỬI PHIẾU KHẢO SÁT (cửa sổ terminal 3)
 ----------------------------------------------
   cd notification-service
 
+  Mã đơn tự động:
+    Nếu KHÔNG ghi --order, hệ thống tự đánh số ORD-01, ORD-02, ... ORD-99,
+    sau đó quay lại ORD-01. Mỗi lần chạy lệnh dùng 1 số đơn cho tất cả người nhận.
+    Số đếm được lưu trong data/order_counter.txt (xóa file này để về lại ORD-01).
+
   Gửi cho 1 khách:
-    python trigger_survey.py --order ORD-1001 --service "Giặt ủi" --to KH001
+    python trigger_survey.py --service "Giặt ủi" --to KH001
 
   Gửi cho nhiều khách cùng lúc (cách nhau bằng dấu cách):
-    python trigger_survey.py --order ORD-1001 --service "Giặt ủi" --to KH001 KH002
+    python trigger_survey.py --service "Giặt ủi" --to KH001 KH002 
 
   Gửi cho tất cả khách đã lưu:
-    python trigger_survey.py --order ORD-1001 --service "Giặt ủi" --all
+    python trigger_survey.py --service "Giặt ủi" --all
 
-  Không có --to / --all: gửi về TELEGRAM_CHAT_ID của bạn (như bản cũ, để test nhanh).
+  Không có --to / --all: gửi về TELEGRAM_CHAT_ID của bạn (để test nhanh).
 
-  Khi gửi cho nhiều khách, mã đơn tự thêm mã khách phía sau
-  (vd: ORD-1001-KH001, ORD-1001-KH002) để phân biệt trong kết quả khảo sát.
+  Quy tắc mã đơn (luôn thống nhất 1 kiểu): <mã đơn>-<mã khách>
+    Ví dụ: gửi ORD-05 cho KH001 và KH002 -> ORD-05-KH001, ORD-05-KH002
+           gửi ORD-06 chỉ cho KH002      -> ORD-06-KH002
+           gửi không chỉ định khách      -> ORD-07-ADMIN
+  Mỗi cặp (khách + phiếu) chỉ được chấm 1 lần. Bấm lại nút sao của phiếu đã chấm
+  thì bot báo "Bạn đã đánh giá đơn này rồi". Khi bộ đếm quay vòng và mã đơn được
+  dùng lại, khách vẫn chấm được bình thường vì mỗi phiếu gửi đi là một tin nhắn riêng.
+
   Nếu có khách chặn bot hoặc lỗi, chương trình báo lỗi riêng người đó rồi gửi tiếp
   cho những người còn lại.
 
@@ -82,6 +94,14 @@ BƯỚC 6: GỬI PHIẾU KHẢO SÁT (cửa sổ terminal 3)
   cảnh báo CSKH. Chấm >= 3 sao: bot hỏi góp ý. Kết quả lưu ở data/survey_results.csv
   (cột chat_id đối chiếu được với data/customers.csv).
   Gõ /skip để bỏ qua câu hỏi lý do/góp ý.
+
+  Các tham số của trigger_survey.py:
+    --order MÃ         Mã đơn tự đặt (bỏ trống = tự đánh số ORD-01..ORD-99)
+    --service TÊN      Tên dịch vụ khách vừa dùng
+    --to MÃ [MÃ ...]   Gửi cho các khách chỉ định
+    --all              Gửi cho toàn bộ khách đã lưu
+    --list             Xem danh sách khách đã lưu
+    --delay N          Chờ N giây trước khi gửi
 
 LƯU Ý
 -----
@@ -93,7 +113,11 @@ LƯU Ý
   - Không chạy get_chat_id.py khi bot Java đang chạy (lỗi 409). Không cần dùng nữa
     vì bot đã tự lưu chat_id.
   - Danh sách khách nằm trong file CSV nên tắt/mở lại bot vẫn còn. Muốn xóa sạch
-    để demo lại từ đầu, xóa file data/customers.csv.
+    để demo lại từ đầu, xóa data/customers.csv, data/survey_results.csv và
+    data/order_counter.txt.
+  - Cột order_id trong survey_results.csv sẽ lặp lại sau mỗi 99 đơn. Dùng cột time
+    để phân biệt các vòng.
+  - Trạng thái hội thoại khảo sát lưu trong RAM nên restart bot thì mất phiên đang dở.
   - Python mặc định đọc data/customers.csv ở thư mục cha của notification-service
     (tức cùng chỗ với file .jar). Nếu để khác chỗ, thêm vào .env:
         CUSTOMERS_FILE=đường_dẫn_đầy_đủ_tới_customers.csv
