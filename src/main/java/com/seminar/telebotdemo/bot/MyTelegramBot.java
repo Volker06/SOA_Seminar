@@ -46,7 +46,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     @Value("${telegram.bot.token}")
     private String botToken;
 
-
     @Override
     public String getBotUsername() {
         return botUsername;
@@ -69,6 +68,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
         String text = update.getMessage().getText();
         long chatId = update.getMessage().getChatId();
+
 
         String code = null;
         var from = update.getMessage().getFrom();

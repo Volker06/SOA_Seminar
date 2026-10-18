@@ -34,11 +34,11 @@ public class CustomerStore {
                 String[] p = lines.get(i).split(",", -1);
                 if (p.length < 2) continue;
                 if (p[1].equals(String.valueOf(chatId))) {
-                    return p[0];                       
+                    return p[0];                       // khách cũ
                 }
                 codes.add(p[0]);
             }
-            int n = lines.size();                      
+            int n = lines.size();                      // dòng header tính là 1 => KH001 cho khách đầu tiên
             String code = String.format("KH%03d", n);
             while (codes.contains(code)) {
                 code = String.format("KH%03d", ++n);

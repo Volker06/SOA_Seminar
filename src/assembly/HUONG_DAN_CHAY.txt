@@ -24,8 +24,8 @@ BƯỚC 1: TẠO FILE .env
     BOT_TOKEN, BOT_USERNAME, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, SERVICE_API_KEY
   TELEGRAM_CHAT_ID: mở bot trên Telegram, bấm Start 1 lần, rồi nhắn
   @userinfobot để biết chat_id của bạn.
-  (TELEGRAM_CHAT_ID là chat_id của quản trị/CSKH: nhận cảnh báo khi khách chấm
-   thấp điểm, và là nơi nhận phiếu khi bạn gửi thử mà không chỉ định khách.)
+  (TELEGRAM_CHAT_ID là chat_id của quản trị: là nơi nhận phiếu khi bạn gửi thử
+   mà không chỉ định khách.)
 
 BƯỚC 2: CHẠY BOT JAVA (cửa sổ terminal 1)
 -----------------------------------------
@@ -33,12 +33,13 @@ BƯỚC 2: CHẠY BOT JAVA (cửa sổ terminal 1)
   (file .env phải nằm cùng thư mục bạn đang đứng khi chạy lệnh này)
   Giữ cửa sổ này mở suốt quá trình demo: bot Java chính là nơi tự lưu khách.
 
-BƯỚC 3: CHẠY NOTIFICATION SERVICE (cửa sổ terminal 2)
------------------------------------------------------
+BƯỚC 3 (TUỲ CHỌN): CHẠY NOTIFICATION SERVICE (cửa sổ terminal 2)
+----------------------------------------------------------------
   cd notification-service
   pip install -r requirements.txt
   py -m uvicorn notification_service:app --port 8000
-  (Bước này dùng để bot Java gửi cảnh báo tới CSKH khi khách chấm <= 2 sao.)
+  (Chỉ cần khi muốn dùng REST /notify, /survey. Gửi phiếu bằng trigger_survey.py
+   và chạy monitor.py không cần bước này.)
 
 BƯỚC 4: THU THẬP KHÁCH HÀNG (làm trên Telegram)
 -----------------------------------------------
@@ -90,8 +91,8 @@ BƯỚC 6: GỬI PHIẾU KHẢO SÁT (cửa sổ terminal 3)
   Nếu có khách chặn bot hoặc lỗi, chương trình báo lỗi riêng người đó rồi gửi tiếp
   cho những người còn lại.
 
-  Mở Telegram: bot gửi phiếu 5 sao tới từng khách. Chấm <= 2 sao: bot hỏi lý do và
-  cảnh báo CSKH. Chấm >= 3 sao: bot hỏi góp ý. Kết quả lưu ở data/survey_results.csv
+  Mở Telegram: bot gửi phiếu 5 sao tới từng khách. Chấm <= 2 sao: bot hỏi lý do.
+  Chấm >= 3 sao: bot hỏi góp ý. Kết quả lưu ở data/survey_results.csv
   (cột chat_id đối chiếu được với data/customers.csv).
   Gõ /skip để bỏ qua câu hỏi lý do/góp ý.
 
