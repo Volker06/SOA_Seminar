@@ -6,7 +6,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Component;
 import com.seminar.telebotdemo.survey.SurveyResultStore;
-import com.seminar.telebotdemo.survey.NotificationClient;
 
 @Component
 public class SurveyHandler {
@@ -33,11 +32,9 @@ public class SurveyHandler {
     private final Set<String> rated = ConcurrentHashMap.newKeySet();
 
     private final SurveyResultStore store;
-    private final NotificationClient notificationClient;
 
-    public SurveyHandler(SurveyResultStore store, NotificationClient notificationClient) {
+    public SurveyHandler(SurveyResultStore store) {
         this.store = store;
-        this.notificationClient = notificationClient;
     }
 
     public CallbackResult handleCallback(long chatId, String data) {
@@ -107,14 +104,11 @@ public class SurveyHandler {
     }
 
     private String finish(long chatId, Session s, String comment) {
-    store.save(chatId, s.orderId(), s.stars(), comment);
+        store.save(chatId, s.orderId(), s.stars(), comment);
 
-    if (s.stars() <= 2) {
-        notificationClient.send("survey-service", "WARNING", "Khách chưa hài lòng",
-                "Chat " + chatId + " chấm " + s.stars() + "/5 cho đơn " + s.orderId()
-                        + (comment == null ? " (không nêu lý do)" : "\nLý do: " + comment));
-        return "Cảm ơn bạn đã chia sẻ. Chúng mình đã ghi nhận phản hồi của bạn và sẽ cải thiện dịch vụ.";
-    }
+        if (s.stars() <= 2) {
+            return "Cảm ơn bạn đã chia sẻ. Chúng mình đã ghi nhận phản hồi của bạn và sẽ cải thiện dịch vụ.";
+        }
         return "💙 Cảm ơn bạn đã dành thời gian đánh giá! Hẹn gặp lại bạn ở lần sử dụng tiếp theo.";
     }
 

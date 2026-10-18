@@ -27,7 +27,6 @@ def main():
             print(f"{code}  chat_id={c['chat_id']}  {c['name']}  @{c['username']}")
         return
 
-    # Xác định danh sách người nhận: (mã, chat_id)
     if args.all:
         targets = [(code, c["chat_id"]) for code, c in book.items()]
     elif args.to:
@@ -38,7 +37,7 @@ def main():
             else:
                 print(f"Bỏ qua {code}: không có trong danh sách khách")
     else:
-        targets = [("ADMIN", None)]   # không chỉ định -> gửi về TELEGRAM_CHAT_ID như cũ
+        targets = [("ADMIN", None)]
 
     if not targets:
         raise SystemExit("Không có người nhận hợp lệ.")
@@ -56,7 +55,7 @@ def main():
             print(f"✔ Đã gửi cho {code} (đơn {order_id})")
             ok += 1
         except (TelegramError, ValueError) as e:
-            print(f"✘ Gửi cho {code} thất bại: {e}")   # lỗi 1 người không làm dừng cả loạt
+            print(f"✘ Gửi cho {code} thất bại: {e}")
         time.sleep(0.1)
 
     print(f"Xong: {ok}/{len(targets)} thành công.")

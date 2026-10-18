@@ -12,7 +12,7 @@ Seminar môn SOA: Telegram Bot API gồm 3 chức năng, mỗi chức năng nằ
 
 Sau khi dùng xong dịch vụ, bot **chủ động** gửi phiếu khảo sát 5 sao tới khách (không cần gõ `/start`):
 
-- Chấm **≤ 2 sao** (không hài lòng): bot hỏi lý do, lưu kết quả và cảnh báo đội CSKH qua Telegram.
+- Chấm **≤ 2 sao** (không hài lòng): bot hỏi lý do rồi lưu kết quả.
 - Chấm **≥ 3 sao** (hài lòng): bot hỏi khách có muốn góp ý gì không, rồi lưu kết quả.
 - Gõ `/skip` để bỏ qua câu hỏi lý do / góp ý (số sao vẫn được lưu).
 
@@ -32,8 +32,7 @@ SOA_Seminar/
 │   │   └── SurveyHandler.java          # máy trạng thái khảo sát sau bán
 │   └── survey/
 │       ├── CustomerStore.java          # lưu khách + cấp mã khách -> data/customers.csv
-│       ├── SurveyResultStore.java      # lưu kết quả -> data/survey_results.csv
-│       └── NotificationClient.java     # gọi REST /notify để cảnh báo CSKH
+│       └── SurveyResultStore.java      # lưu kết quả -> data/survey_results.csv
 ├── src/assembly/
 │   ├── distribution.xml                # quy định nội dung file zip phân phối (Maven)
 │   └── HUONG_DAN_CHAY.txt              # hướng dẫn chạy, nằm trong zip phân phối
@@ -91,9 +90,8 @@ cp .env.example .env          (Mac/Linux)
 |---|---|
 | `BOT_TOKEN`, `TELEGRAM_BOT_TOKEN` | Token bot từ `@BotFather` (hai biến cùng một giá trị) |
 | `BOT_USERNAME` | Username của bot |
-| `TELEGRAM_CHAT_ID` | chat_id của quản trị/CSKH: nhận cảnh báo khi khách chấm thấp điểm, và là nơi nhận phiếu khi gửi thử mà không chỉ định khách. Mở bot trên Telegram, bấm **Start** một lần, rồi nhắn `@userinfobot` để biết |
+| `TELEGRAM_CHAT_ID` | chat_id của quản trị: là nơi nhận phiếu khi gửi thử mà không chỉ định khách. Mở bot trên Telegram, bấm **Start** một lần, rồi nhắn `@userinfobot` để biết |
 | `SERVICE_API_KEY` | Khóa bí mật cho REST của Notification Service, tự đặt |
-| `NOTIFICATION_URL` | (Tuỳ chọn) Địa chỉ Notification Service, mặc định `http://localhost:8000` |
 | `CUSTOMERS_FILE` | (Tuỳ chọn) Đường dẫn tới `customers.csv` nếu để khác chỗ mặc định |
 
 **Bước 3. Build bằng Maven**
@@ -112,19 +110,19 @@ Lần đầu Maven tải thư viện nên cần có mạng. `-DskipTests` bỏ q
 
 Muốn chạy thử ngay mà không tạo JAR: `mvnw.cmd spring-boot:run`.
 
-**Bước 4. Chạy bot Java và Notification Service (2 cửa sổ terminal)**
+**Bước 4. Chạy bot Java (và Notification Service nếu cần)**
 
 ```
 # Terminal 1: bot Java (đứng ở thư mục có file .env, giữ mở suốt quá trình demo)
 java -jar target/telebotdemo-0.0.1-SNAPSHOT.jar
 
-# Terminal 2: Notification Service
+# Terminal 2 (tuỳ chọn): Notification Service
 cd notification-service
 pip install -r requirements.txt
 uvicorn notification_service:app --port 8000
 ```
 
-Notification Service dùng để bot Java gửi cảnh báo tới CSKH khi khách chấm ≤ 2 sao.
+Notification Service là **tuỳ chọn** với luồng khảo sát: chỉ cần chạy khi muốn dùng REST `/notify`, `/survey`. Gửi phiếu bằng `trigger_survey.py` (Bước 6) và `monitor.py` không cần chạy `uvicorn`.
 
 **Bước 5. Thu thập khách hàng (làm trên Telegram)**
 
